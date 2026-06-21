@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS cards (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    deck_id UUID NOT NULL,
+    front VARCHAR(255) NOT NULL,
+    back VARCHAR(255) NOT NULL,
+    note VARCHAR(255),
+    class VARCHAR(100),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cards_deck_id ON cards(deck_id);
+
+ALTER TABLE cards
+ADD CONSTRAINT fk_cards_deck_id_decks_id FOREIGN KEY(deck_id) REFERENCES decks(id);
