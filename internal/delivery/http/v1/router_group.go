@@ -12,8 +12,10 @@ func RouterGroup(
 ) {
 	register := func(method, pattern string, handler http.HandlerFunc) {
 		var finalHandler http.Handler = handler
-		for i := len(middlewares) - 1; i >= 0; i-- {
-			finalHandler = middlewares[i](finalHandler)
+		if middlewares != nil {
+			for i := len(middlewares) - 1; i >= 0; i-- {
+				finalHandler = middlewares[i](finalHandler)
+			}
 		}
 		finalPattern := method + " " + prefix + pattern
 		mux.Handle(finalPattern, finalHandler)

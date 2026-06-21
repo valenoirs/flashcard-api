@@ -12,6 +12,7 @@ import (
 type Config struct {
 	App      AppConfig
 	Postgres PostgresConfig
+	CORS     CORSConfig
 }
 
 type AppConfig struct {
@@ -31,6 +32,14 @@ type PostgresConfig struct {
 	SlowQueryThreshold time.Duration
 }
 
+type CORSConfig struct {
+	AllowedOrigin   []string
+	AllowedMethod   []string
+	AllowedHeader   []string
+	AllowCredential bool
+	MaxAge          int
+}
+
 func NewConfig() *Config {
 	return &Config{
 		App: AppConfig{
@@ -47,6 +56,13 @@ func NewConfig() *Config {
 			MaxIdleConnection:  Get("DB_MAX_IDLE_CONNECTION", 10),
 			MaxOpenConnection:  Get("DB_MAX_OPEN_CONNECTION", 100),
 			SlowQueryThreshold: Get("DB_SLOW_QUERY_THRESHOLD", 200*time.Second),
+		},
+		CORS: CORSConfig{
+			AllowedOrigin:   Get("CORS_ALLOWED_ORIGIN", []string{"http://localhost:3000", "http://localhost:8080", "http://localhost:3033", "http://localhost:5000"}),
+			AllowedMethod:   Get("CORS_ALLOWED_METHOD", []string{"GET", "POST", "PUT", "PATCH"}),
+			AllowedHeader:   Get("CORS_ALLOWED_HEADER", []string{"Origin", "Content-Type", "Accpet", "Authorization"}),
+			AllowCredential: Get("CORS_ALLOW_CREDENTIAL", true),
+			MaxAge:          Get("CORS_MAX_AGE", 86400),
 		},
 	}
 }

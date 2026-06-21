@@ -42,7 +42,7 @@ func main() {
 	}
 
 	go func() {
-		slog.Info("Starting HTTP server", slog.String("port", port))
+		slog.Info("starting HTTP server", slog.String("port", port))
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("server failed to start", slog.Any("error", err))
 			os.Exit(1)
@@ -53,19 +53,20 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	slog.Info("Shutting down server...")
+	slog.Info("shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		slog.Error("Server forced to shutdown", slog.Any("error", err))
+		slog.Error("server forced to shutdown", slog.Any("error", err))
 	}
 
-	slog.Info("Server exited gracefully")
+	slog.Info("server exited gracefully")
 }
 
 func loadEnv() {
+	slog.Info("loading .env file...")
 	file, err := os.Open(".env")
 	if err != nil {
 		slog.Warn("failed to load .env, relying on system environment variables")

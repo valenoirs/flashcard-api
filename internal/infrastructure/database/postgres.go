@@ -25,7 +25,7 @@ type PostgresQueryExecutor interface {
 }
 
 func NewPostgresDatabase(cfg *config.Config, log *slog.Logger) (*PostgresDatabase, func(), error) {
-	log.Info("Connecting to database...")
+	log.Info("establishing postgres database connection pool...")
 	dsn := fmt.Sprintf("%s&search_path=%s", cfg.Postgres.ConnectionString, cfg.Postgres.SchemaName)
 
 	poolConfig, err := pgxpool.ParseConfig(dsn)
@@ -43,7 +43,7 @@ func NewPostgresDatabase(cfg *config.Config, log *slog.Logger) (*PostgresDatabas
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open database connection pool: %w", err)
+		return nil, nil, fmt.Errorf("failed establishing database connection pool: %w", err)
 	}
 
 	if err := pool.Ping(ctx); err != nil {
@@ -51,7 +51,7 @@ func NewPostgresDatabase(cfg *config.Config, log *slog.Logger) (*PostgresDatabas
 	}
 
 	cleanup := func() {
-		log.Info("Closing database connection pool...")
+		log.Info("closing database connection pool...")
 		pool.Close()
 	}
 

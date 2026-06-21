@@ -57,7 +57,7 @@ func (c *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 
 	cmd := request.NewCreateCardCommand(req, cardID)
 
-	if err := command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
+	if err = command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})

@@ -6,6 +6,7 @@ import (
 
 	"github.com/valenoirs/flashcard-api/internal/config"
 	httpRouter "github.com/valenoirs/flashcard-api/internal/delivery/http"
+	"github.com/valenoirs/flashcard-api/internal/delivery/http/middleware"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/command"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/query"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/database"
@@ -16,7 +17,7 @@ import (
 )
 
 type App struct {
-	router *http.ServeMux
+	router http.Handler
 	logger *slog.Logger
 	config *config.Config
 }
@@ -60,8 +61,13 @@ func NewApp() (*App, func(), error) {
 
 	httpRouter.NewHTTPRouter(mux, commandRegistry, queryRegistry)
 
+	// middleware
+	var globalMiddleware http.Handler = mux
+
+	globalMiddleware = middleware.CORS(cfg, log)(globalMiddleware)
+
 	return &App{
-		router: mux,
+		router: globalMiddleware,
 		logger: log,
 		config: cfg,
 	}, cleanup, nil
