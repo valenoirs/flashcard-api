@@ -11,12 +11,6 @@ type DeleteCardCommand struct {
 	ID uuid.UUID
 }
 
-func (c *DeleteCardCommand) ToDomain() *domain.Card{
-	return &domain.Card{
-		ID: c.ID,
-	}
-}
-
 type DeleteCardHandler struct {
 	cardRepo domain.CardRepository
 }
@@ -33,5 +27,5 @@ func (c *DeleteCardHandler) Handle(
 	ctx context.Context,
 	command *DeleteCardCommand,
 ) error {
-	return c.cardRepo.DeleteCard(ctx, command.ToDomain());
+	return c.cardRepo.DeleteCard(ctx, command.ID);
 }

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,8 +40,8 @@ func NewCardModel(c *domain.Card) *Card {
 	return &Card{
 		ID:        c.ID,
 		DeckID:    c.DeckID,
-		Front:     c.Front,
-		Back:      c.Back,
+		Front:     strings.ToLower(c.Front),
+		Back:      strings.ToLower(c.Back),
 		Note:      c.Note,
 		Class:     c.Class,
 		CreatedAt: c.CreatedAt,
@@ -101,10 +102,9 @@ func (c *cardPostgresAdapter) CreateCard(ctx context.Context, card *domain.Card)
 }
 
 // DeleteCard implements [domain.CardRepository].
-func (c *cardPostgresAdapter) DeleteCard(ctx context.Context, card *domain.Card) error {
-	m := NewCardModel(card)
+func (c *cardPostgresAdapter) DeleteCard(ctx context.Context, cardID uuid.UUID) error {
 	query := "DELETE FROM cards WHERE id = $1"
-	commandTag, err := c.db.Exec(ctx, query, m.ID)
+	commandTag, err := c.db.Exec(ctx, query, cardID)
 	if err != nil {
 		return err
 	}

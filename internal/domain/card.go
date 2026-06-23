@@ -21,7 +21,7 @@ type Card struct {
 type CardRepository interface {
 	CreateCard(ctx context.Context, card *Card) error
 	UpdateCard(ctx context.Context, card *Card) error
-	DeleteCard(ctx context.Context, card *Card) error
-	GetCardList(ctx context.Context, id uuid.UUID) ([]Card, error)
-	GetCardByID(ctx context.Context, id uuid.UUID) (*Card, error)
+	DeleteCard(ctx context.Context, cardID uuid.UUID) error
+	GetCardList(ctx context.Context, deckID uuid.UUID) ([]Card, error)
+	GetCardByID(ctx context.Context, cardID uuid.UUID) (*Card, error)
 }
