@@ -122,6 +122,7 @@ func (c *cardPostgresAdapter) GetCardList(ctx context.Context, deckID uuid.UUID)
 	SELECT id, front, back, note, class, created_at, updated_at
 	FROM cards
 	WHERE deck_id = $1
+	ORDER BY created_at
 	`
 
 	rows, err := c.db.Query(ctx, query, deckID)

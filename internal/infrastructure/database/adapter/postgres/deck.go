@@ -65,7 +65,8 @@ func (d *deckPostgresAdapter) DeleteDeck(ctx context.Context, deckID uuid.UUID) 
 func (d *deckPostgresAdapter) GetDeckList(ctx context.Context) ([]domain.Deck, error) {
 	query := `
 	SELECT id, name, created_at, updated_at
-	FROM decks;
+	FROM decks
+	ORDER BY created_at
 	`
 
 	rows, err := d.db.Query(ctx, query)
