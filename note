@@ -1,0 +1,13 @@
+{
+    "vocab": "一月",
+    "kana":  "いちがつ",
+    "meaning": "First Month",
+    "sentence": [
+        {"text": "一月", "is_target": true},
+        {"text": "に", "is_target": false},
+        {"text": "日本", "reading": "にほん", "is_target": false},
+        {"text": "へ", "is_target": false},
+        {"text": "行きます", "reading": "いきます", "is_target": false}
+    ],
+    "english": "I will go to Japan in January."
+}

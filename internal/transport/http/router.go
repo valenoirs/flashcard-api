@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	v1 "github.com/valenoirs/flashcard-api/internal/delivery/http/v1"
+	v1 "github.com/valenoirs/flashcard-api/internal/transport/http/api/v1"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/command"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/query"
 )

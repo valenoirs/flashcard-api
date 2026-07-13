@@ -10,9 +10,11 @@ import (
 )
 
 type Config struct {
-	App      AppConfig
-	Postgres PostgresConfig
-	CORS     CORSConfig
+	App       AppConfig
+	Postgres  PostgresConfig
+	CORS      CORSConfig
+	Snowflake SnowflakeConfig
+	JWT       JWTConfig
 }
 
 type AppConfig struct {
@@ -40,6 +42,16 @@ type CORSConfig struct {
 	MaxAge          int
 }
 
+type SnowflakeConfig struct {
+	NodeID int
+}
+
+type JWTConfig struct {
+	PrivateKey     string
+	Issuer         string
+	AccessTokenTTL time.Duration
+}
+
 func NewConfig() *Config {
 	return &Config{
 		App: AppConfig{
@@ -63,6 +75,14 @@ func NewConfig() *Config {
 			AllowedHeader:   Get("CORS_ALLOWED_HEADER", []string{"Origin", "Content-Type", "Accpet", "Authorization"}),
 			AllowCredential: Get("CORS_ALLOW_CREDENTIAL", true),
 			MaxAge:          Get("CORS_MAX_AGE", 86400),
+		},
+		Snowflake: SnowflakeConfig{
+			NodeID: Get("SNOWFLAKE_NODE_ID", 1),
+		},
+		JWT: JWTConfig{
+			PrivateKey:     Get("JWT_PRIVATE_KEY", "v4l3n01r5"),
+			Issuer:         Get("JWT_ISSUER", "http://localhost:3000"),
+			AccessTokenTTL: Get("JWT_ACCESS_TOKEN_TTL", 86400*time.Second),
 		},
 	}
 }

@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/valenoirs/flashcard-api/internal/delivery/http/v1/request"
-	"github.com/valenoirs/flashcard-api/internal/delivery/http/v1/response"
 	"github.com/valenoirs/flashcard-api/internal/domain"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/command"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/query"
-	"github.com/valenoirs/flashcard-api/internal/infrastructure/validator"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/api/v1/dto"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/router"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/validator"
 	"github.com/valenoirs/flashcard-api/internal/usecase/card"
 )
 
@@ -20,17 +20,13 @@ type CardHandler struct {
 	queryRegistry   *query.Registry
 }
 
-func RegisterCardRoutes(
-	mux *http.ServeMux,
-	commandRegistry *command.Registry,
-	queryRegistry *query.Registry,
-) {
+func RegisterCardRoutes(mux *http.ServeMux, commandRegistry *command.Registry, queryRegistry *query.Registry) {
 	h := &CardHandler{
 		commandRegistry: commandRegistry,
 		queryRegistry:   queryRegistry,
 	}
 
-	RouterGroup(mux, "/api/v1/cards", []func(http.Handler) http.Handler{}, func(group func(string, string, http.HandlerFunc)) {
+	router.Group(mux, "/api/v1/cards", []func(http.Handler) http.Handler{}, func(group func(string, string, http.HandlerFunc)) {
 		group(http.MethodPost, "/", h.CreateCard)
 		group(http.MethodPut, "/{id}", h.UpdateCard)
 		group(http.MethodDelete, "/{id}", h.DeleteCard)
@@ -39,7 +35,7 @@ func RegisterCardRoutes(
 }
 
 func (c *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
-	req, valErr := validator.ValidateBody[request.CreateCardRequest](r.Body)
+	req, valErr := validator.ValidateBody[dto.CreateCardRequest](r.Body)
 	if valErr != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -47,24 +43,38 @@ func (c *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cardID, err := uuid.NewV7()
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]any{"error": "failed to generate uuid"})
-		return
+	cardID := uuid.Must(uuid.NewV7())
+	cmdSentences := make([]*card.CardSentenceCommand, len(req.Sentences))
+	for i := range req.Sentences {
+		s := req.Sentences[i]
+		cmdSentences[i] = &card.CardSentenceCommand{
+			Position: s.Position,
+			Text:     s.Text,
+			Reading:  s.Reading,
+			IsTarget: s.IsTarget,
+		}
 	}
 
-	cmd := request.NewCreateCardCommand(req, cardID)
+	cmd := &card.CreateCardCommand{
+		ID:        cardID,
+		DeckID:    req.DeckID,
+		Vocab:     req.Vocab,
+		Kana:      req.Kana,
+		Meaning:   req.Meaning,
+		English:   req.English,
+		Sentences: cmdSentences,
+	}
 
-	if err = command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
+	if err := command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
 		return
 	}
 
-	q := request.NewGetCardDetailQuery(cardID)
+	q := &card.GetCardDetailQuery{
+		ID: cardID,
+	}
 
 	data, err := query.Dispatch[*card.GetCardDetailQuery, *domain.Card](r.Context(), c.queryRegistry, q)
 	if err != nil {
@@ -74,7 +84,8 @@ func (c *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := response.NewGetCardResponse(data)
+	// NOTE: might cause not found error when switch to read/write db
+	res := toCardResponse(data)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -92,7 +103,7 @@ func (c *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := validator.ValidateBody[request.UpdateCardRequest](r.Body)
+	req, err := validator.ValidateBody[dto.UpdateCardRequest](r.Body)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -100,7 +111,13 @@ func (c *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := request.NewUpdateCardCommand(req, cardID)
+	cmd := &card.UpdateCardCommand{
+		ID:      cardID,
+		Vocab:   req.Vocab,
+		Kana:    req.Kana,
+		Meaning: req.Meaning,
+		English: req.English,
+	}
 
 	if err := command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -123,7 +140,9 @@ func (c *CardHandler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := request.NewDeleteCardCommand(cardID)
+	cmd := &card.DeleteCardCommand{
+		ID: cardID,
+	}
 
 	if err := command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -152,7 +171,9 @@ func (c *CardHandler) GetCardList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	q := request.NewGetCardListQuery(deckID)
+	q := &card.GetCardListQuery{
+		DeckID: deckID,
+	}
 
 	data, err := query.Dispatch[*card.GetCardListQuery, []domain.Card](r.Context(), c.queryRegistry, q)
 	if err != nil {
@@ -161,13 +182,40 @@ func (c *CardHandler) GetCardList(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
 		return
 	}
-	res := make([]response.GetCardResponse, 0, len(data))
+	res := make([]dto.CardResponse, len(data))
 
-	for _, item := range data {
-		res = append(res, response.NewGetCardResponse(&item))
+	for i := range data {
+		d := data[i]
+		res[i] = toCardResponse(&d)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{"data": res})
+}
+
+func toCardResponse(c *domain.Card) dto.CardResponse {
+	sentences := make([]*dto.CardSentenceResponse, len(c.Sentences))
+	for i := range c.Sentences {
+		s := c.Sentences[i]
+
+		sentences[i] = &dto.CardSentenceResponse{
+			ID:       s.ID,
+			Position: s.Position,
+			Text:     s.Text,
+			Reading:  s.Reading,
+			IsTarget: s.IsTarget,
+		}
+	}
+
+	return dto.CardResponse{
+		ID:        c.ID,
+		Vocab:     c.Vocab,
+		Kana:      c.Kana,
+		Meaning:   c.Meaning,
+		English:   c.English,
+		Sentences: sentences,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
 }

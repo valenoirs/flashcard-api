@@ -1,10 +1,10 @@
-package v1
+package router
 
 import (
 	"net/http"
 )
 
-func RouterGroup(
+func Group(
 	mux *http.ServeMux,
 	prefix string,
 	middlewares []func(http.Handler) http.Handler,

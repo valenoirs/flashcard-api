@@ -13,10 +13,10 @@ import (
 )
 
 type Deck struct {
-	ID        uuid.UUID
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uuid.UUID `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func (d *Deck) ToDomain() *domain.Deck {
@@ -44,8 +44,8 @@ type deckPostgresAdapter struct {
 // CreateDeck implements [domain.DeckRepository].
 func (d *deckPostgresAdapter) CreateDeck(ctx context.Context, deck *domain.Deck) error {
 	m := NewDeckModel(deck)
-	query := "INSERT INTO decks (name) VALUES ($1)"
-	_, err := d.db.Exec(ctx, query, m.Name)
+	query := "INSERT INTO decks (id, name) VALUES ($1, $2)"
+	_, err := d.db.Exec(ctx, query, m.Name, m.ID)
 	if err != nil {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 			fmt.Printf("Postgres Error: %s (Code: %s)\n", pgErr.Message, pgErr.Code)

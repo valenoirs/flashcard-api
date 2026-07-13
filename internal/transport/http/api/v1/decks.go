@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/valenoirs/flashcard-api/internal/delivery/http/v1/request"
-	"github.com/valenoirs/flashcard-api/internal/delivery/http/v1/response"
+	"github.com/google/uuid"
 	"github.com/valenoirs/flashcard-api/internal/domain"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/command"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/query"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/api/v1/dto"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/router"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/validator"
 	"github.com/valenoirs/flashcard-api/internal/usecase/deck"
-	"github.com/valenoirs/flashcard-api/internal/infrastructure/validator"
 )
 
 type DeckHandler struct {
@@ -18,32 +19,41 @@ type DeckHandler struct {
 	queryRegistry   *query.Registry
 }
 
-func RegisterDeckRoutes(
-	mux *http.ServeMux,
-	commandRegistry *command.Registry,
-	queryRegistry *query.Registry,
-) {
+func RegisterDeckRoutes(mux *http.ServeMux, commandRegistry *command.Registry, queryRegistry *query.Registry) {
 	h := &DeckHandler{
 		commandRegistry: commandRegistry,
 		queryRegistry:   queryRegistry,
 	}
 
-	RouterGroup(mux, "/api/v1/decks", []func(http.Handler) http.Handler{}, func(group func(string, string, http.HandlerFunc)) {
+	router.Group(mux, "/api/v1/decks", []func(http.Handler) http.Handler{}, func(group func(string, string, http.HandlerFunc)) {
 		group(http.MethodPost, "/", h.CreateDeck)
 		group(http.MethodGet, "/", h.GetDeckList)
 	})
 }
 
 func (d *DeckHandler) CreateDeck(w http.ResponseWriter, r *http.Request) {
-	req, err := validator.ValidateBody[request.CreateDeckRequest](r.Body)
-	if err != nil {
+	req, valErr := validator.ValidateBody[dto.CreateDeckRequest](r.Body)
+	if valErr != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(map[string]any{"errors": err})
+		json.NewEncoder(w).Encode(map[string]any{"errors": valErr})
 		return
 	}
 
-	if err := command.Dispatch(r.Context(), d.commandRegistry, req.ToCommand()); err != nil {
+	deckID, err := uuid.NewV7()
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"error": "failed to generate uuid"})
+		return
+	}
+
+	cmd := &deck.CreateDeckCommand{
+		DeckID: deckID,
+		Name:   req.Name,
+	}
+
+	if err := command.Dispatch(r.Context(), d.commandRegistry, cmd); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{"error": err})
@@ -62,13 +72,22 @@ func (d *DeckHandler) GetDeckList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make([]response.GetDeckResponse, 0, len(data))
+	res := make([]dto.DeckResponse, 0, len(data))
 
 	for _, item := range data {
-		res = append(res, response.NewGetDeckResponse(&item))
+		res = append(res, toDeckResponse(&item))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{"data": res})
+}
+
+func toDeckResponse(d *domain.Deck) dto.DeckResponse {
+	return dto.DeckResponse{
+		ID:        d.ID,
+		Name:      d.Name,
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
+	}
 }

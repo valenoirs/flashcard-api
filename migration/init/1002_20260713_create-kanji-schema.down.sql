@@ -1,0 +1,1 @@
+DROP SCHEMA IF EXISTS kanji_schema CASCADE;

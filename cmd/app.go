@@ -5,13 +5,13 @@ import (
 	"net/http"
 
 	"github.com/valenoirs/flashcard-api/internal/config"
-	httpRouter "github.com/valenoirs/flashcard-api/internal/delivery/http"
-	"github.com/valenoirs/flashcard-api/internal/delivery/http/middleware"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/command"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/cqrs/query"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/database"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/database/adapter/postgres"
 	"github.com/valenoirs/flashcard-api/internal/infrastructure/logger"
+	httpRouter "github.com/valenoirs/flashcard-api/internal/transport/http"
+	"github.com/valenoirs/flashcard-api/internal/transport/http/middleware"
 	"github.com/valenoirs/flashcard-api/internal/usecase/card"
 	"github.com/valenoirs/flashcard-api/internal/usecase/deck"
 )
@@ -62,9 +62,11 @@ func NewApp() (*App, func(), error) {
 	httpRouter.NewHTTPRouter(mux, commandRegistry, queryRegistry)
 
 	// middleware
+	mw := middleware.NewManager(cfg, log)
+
 	var globalMiddleware http.Handler = mux
 
-	globalMiddleware = middleware.CORS(cfg, log)(globalMiddleware)
+	globalMiddleware = mw.CORS(globalMiddleware)
 
 	return &App{
 		router: globalMiddleware,

@@ -3,19 +3,8 @@ package card
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/valenoirs/flashcard-api/internal/domain"
 )
-
-type GetCardListQuery struct {
-	DeckID uuid.UUID
-}
-
-func (c *GetCardListQuery) ToDomain() *domain.Card {
-	return &domain.Card{
-		DeckID: c.DeckID,
-	}
-}
 
 type GetCardListHandler struct {
 	cardRepo domain.CardRepository

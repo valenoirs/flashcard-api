@@ -3,43 +3,28 @@ package card
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/valenoirs/flashcard-api/internal/domain"
 )
 
-type UpdateCardCommand struct {
-	ID    uuid.UUID
-	Front string
-	Back  string
-	Note  *string
-	Class *string
-}
-
-func (u *UpdateCardCommand) ToDomain() *domain.Card {
-	return &domain.Card{
-		ID:    u.ID,
-		Front: u.Front,
-		Back:  u.Back,
-		Note:  u.Note,
-		Class: u.Class,
-	}
-}
 
 type UpdateCardHandler struct {
 	cardRepo domain.CardRepository
 }
 
-func NewUpdateCardHandler(
-	cardRepo domain.CardRepository,
-) *UpdateCardHandler {
+func NewUpdateCardHandler(cardRepo domain.CardRepository) *UpdateCardHandler {
 	return &UpdateCardHandler{
 		cardRepo: cardRepo,
 	}
 }
 
-func (u *UpdateCardHandler) Handle(
-	ctx context.Context,
-	command *UpdateCardCommand,
-) error {
-	return u.cardRepo.UpdateCard(ctx, command.ToDomain())
+func (h *UpdateCardHandler) Handle(ctx context.Context, cmd *UpdateCardCommand) error {
+	card := &domain.Card{
+		ID:      cmd.ID,
+		Vocab:   cmd.Vocab,
+		Kana:    cmd.Kana,
+		Meaning: cmd.Meaning,
+		English: cmd.English,
+	}
+
+	return h.cardRepo.UpdateCard(ctx, card)
 }

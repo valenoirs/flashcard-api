@@ -10,10 +10,11 @@ import (
 type Card struct {
 	ID        uuid.UUID
 	DeckID    uuid.UUID
-	Front     string
-	Back      string
-	Note      *string
-	Class     *string
+	Vocab     string
+	Kana      string
+	Meaning   string
+	English   string
+	Sentences  []*Sentence
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

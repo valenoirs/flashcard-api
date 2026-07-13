@@ -16,9 +16,7 @@ type GetDeckListHandler struct {
 	deckRepo domain.DeckRepository
 }
 
-func NewGetDeckListHandler(
-	deckRepo domain.DeckRepository,
-) *GetDeckListHandler {
+func NewGetDeckListHandler(deckRepo domain.DeckRepository) *GetDeckListHandler {
 	return &GetDeckListHandler{
 		deckRepo: deckRepo,
 	}

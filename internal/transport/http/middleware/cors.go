@@ -54,5 +54,4 @@ func CORS(cfg *config.Config, logger *slog.Logger) func(http.Handler) http.Handl
 			next.ServeHTTP(w, r)
 		})
 	}
-
 }
