@@ -6,7 +6,6 @@ import (
 	"github.com/valenoirs/flashcard-api/internal/domain"
 )
 
-
 type UpdateCardHandler struct {
 	cardRepo domain.CardRepository
 }
@@ -19,11 +18,12 @@ func NewUpdateCardHandler(cardRepo domain.CardRepository) *UpdateCardHandler {
 
 func (h *UpdateCardHandler) Handle(ctx context.Context, cmd *UpdateCardCommand) error {
 	card := &domain.Card{
-		ID:      cmd.ID,
-		Vocab:   cmd.Vocab,
-		Kana:    cmd.Kana,
-		Meaning: cmd.Meaning,
-		English: cmd.English,
+		ID:       cmd.ID,
+		Vocab:    cmd.Vocab,
+		Kana:     cmd.Kana,
+		Meaning:  cmd.Meaning,
+		English:  cmd.English,
+		Sentence: cmd.Sentence,
 	}
 
 	return h.cardRepo.UpdateCard(ctx, card)

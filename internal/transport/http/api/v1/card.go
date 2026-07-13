@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/valenoirs/flashcard-api/internal/domain"
@@ -44,25 +45,15 @@ func (c *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cardID := uuid.Must(uuid.NewV7())
-	cmdSentences := make([]*card.CardSentenceCommand, len(req.Sentences))
-	for i := range req.Sentences {
-		s := req.Sentences[i]
-		cmdSentences[i] = &card.CardSentenceCommand{
-			Position: s.Position,
-			Text:     s.Text,
-			Reading:  s.Reading,
-			IsTarget: s.IsTarget,
-		}
-	}
 
 	cmd := &card.CreateCardCommand{
-		ID:        cardID,
-		DeckID:    req.DeckID,
-		Vocab:     req.Vocab,
-		Kana:      req.Kana,
-		Meaning:   req.Meaning,
-		English:   req.English,
-		Sentences: cmdSentences,
+		ID:       cardID,
+		DeckID:   req.DeckID,
+		Vocab:    req.Vocab,
+		Kana:     req.Kana,
+		Meaning:  req.Meaning,
+		English:  req.English,
+		Sentence: req.Sentence,
 	}
 
 	if err := command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
@@ -112,11 +103,12 @@ func (c *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmd := &card.UpdateCardCommand{
-		ID:      cardID,
-		Vocab:   req.Vocab,
-		Kana:    req.Kana,
-		Meaning: req.Meaning,
-		English: req.English,
+		ID:       cardID,
+		Vocab:    req.Vocab,
+		Kana:     req.Kana,
+		Meaning:  req.Meaning,
+		English:  req.English,
+		Sentence: req.Sentence,
 	}
 
 	if err := command.Dispatch(r.Context(), c.commandRegistry, cmd); err != nil {
@@ -195,27 +187,29 @@ func (c *CardHandler) GetCardList(w http.ResponseWriter, r *http.Request) {
 }
 
 func toCardResponse(c *domain.Card) dto.CardResponse {
-	sentences := make([]*dto.CardSentenceResponse, len(c.Sentences))
-	for i := range c.Sentences {
-		s := c.Sentences[i]
-
-		sentences[i] = &dto.CardSentenceResponse{
-			ID:       s.ID,
-			Position: s.Position,
-			Text:     s.Text,
-			Reading:  s.Reading,
-			IsTarget: s.IsTarget,
-		}
-	}
-
+	parsedSentence := parseJapaneseMarkdown(c.Sentence)
 	return dto.CardResponse{
 		ID:        c.ID,
 		Vocab:     c.Vocab,
 		Kana:      c.Kana,
 		Meaning:   c.Meaning,
 		English:   c.English,
-		Sentences: sentences,
+		Sentence:  parsedSentence,
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
 	}
+}
+
+func parseJapaneseMarkdown(parsedText string) string {
+	htmlResult := parsedText
+
+	// 1. Handle Furigana: [難:むずか] -> <ruby>難<rt>むずか</rt></ruby>
+	furiganaRegex := regexp.MustCompile(`\[([^:]+):([^\]]+)\]`)
+	htmlResult = furiganaRegex.ReplaceAllString(htmlResult, "<ruby>$1<rt>$2</rt></ruby>")
+
+	// 2. Handle Target/Bold Words: **一番** -> <strong class="target-word">一番</strong>
+	boldRegex := regexp.MustCompile(`\*\*([^*]+)\*\*`)
+	htmlResult = boldRegex.ReplaceAllString(htmlResult, `<strong class="target-word">$1</strong>`)
+
+	return htmlResult
 }

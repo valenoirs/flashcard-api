@@ -9,12 +9,12 @@ import (
 // Request
 
 type CreateCardRequest struct {
-	DeckID    uuid.UUID              `json:"deck_id" validate:"required"`
-	Vocab     string                 `json:"vocab" validate:"required"`
-	Kana      string                 `json:"kana" validate:"required"`
-	Meaning   string                 `json:"meaning" validate:"required"`
-	English   string                 `json:"english" validate:"required"`
-	Sentences []*CardSentenceRequest `json:"sentences" validate:"required"`
+	DeckID   uuid.UUID `json:"deck_id" validate:"required"`
+	Vocab    string    `json:"vocab" validate:"required"`
+	Kana     string    `json:"kana" validate:"required"`
+	Meaning  string    `json:"meaning" validate:"required"`
+	English  string    `json:"english" validate:"required"`
+	Sentence string    `json:"sentence" validate:"required"`
 }
 
 type CardSentenceRequest struct {
@@ -25,29 +25,22 @@ type CardSentenceRequest struct {
 }
 
 type UpdateCardRequest struct {
-	Vocab   string `json:"vocab" validate:"required"`
-	Kana    string `json:"kana" validate:"required"`
-	Meaning string `json:"meaning" validate:"required"`
-	English string `json:"english" validate:"required"`
+	Vocab    string `json:"vocab" validate:"required"`
+	Kana     string `json:"kana" validate:"required"`
+	Meaning  string `json:"meaning" validate:"required"`
+	English  string `json:"english" validate:"required"`
+	Sentence string `json:"sentence" validate:"required"`
 }
 
 // Response
 
 type CardResponse struct {
-	ID        uuid.UUID               `json:"id"`
-	Vocab     string                  `json:"vocab"`
-	Kana      string                  `json:"kana"`
-	English   string                  `json:"english"`
-	Meaning   string                  `json:"meaning"`
-	Sentences []*CardSentenceResponse `json:"sentences"`
-	CreatedAt time.Time               `json:"created_at"`
-	UpdatedAt time.Time               `json:"updated_at"`
-}
-
-type CardSentenceResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Position int       `json:"position"`
-	Text     string    `json:"text"`
-	Reading  string    `json:"reading"`
-	IsTarget bool      `json:"is_target"`
+	ID        uuid.UUID `json:"id"`
+	Vocab     string    `json:"vocab"`
+	Kana      string    `json:"kana"`
+	English   string    `json:"english"`
+	Meaning   string    `json:"meaning"`
+	Sentence  string    `json:"sentence"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

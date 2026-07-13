@@ -12,24 +12,18 @@ import (
 )
 
 type Card struct {
-	ID        uuid.UUID  `db:"id"`
-	DeckID    uuid.UUID  `db:"deck_id"`
-	Vocab     string     `db:"vocab"`
-	Kana      string     `db:"kana"`
-	Meaning   string     `db:"meaning"`
-	English   string     `db:"english"`
-	Sentences []Sentence `db:"sentences" json:"sentences"`
-	CreatedAt time.Time  `db:"created_at"`
-	UpdatedAt time.Time  `db:"updated_at"`
+	ID        uuid.UUID `db:"id"`
+	DeckID    uuid.UUID `db:"deck_id"`
+	Vocab     string    `db:"vocab"`
+	Kana      string    `db:"kana"`
+	Meaning   string    `db:"meaning"`
+	English   string    `db:"english"`
+	Sentence  string    `db:"sentence"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func (c *Card) ToDomain() *domain.Card {
-	sentences := make([]*domain.Sentence, len(c.Sentences))
-
-	for i := range c.Sentences {
-		sentences[i] = c.Sentences[i].ToDomain()
-	}
-
 	return &domain.Card{
 		ID:        c.ID,
 		DeckID:    c.DeckID,
@@ -37,29 +31,9 @@ func (c *Card) ToDomain() *domain.Card {
 		Kana:      c.Kana,
 		Meaning:   c.Meaning,
 		English:   c.English,
-		Sentences: sentences,
+		Sentence:  c.Sentence,
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
-	}
-}
-
-type Sentence struct {
-	ID       uuid.UUID `db:"id" json:"id"`
-	CardID   uuid.UUID `db:"card_id" json:"card_id"`
-	Position int       `db:"position" json:"position"`
-	Text     string    `db:"text" json:"text"`
-	Reading  string    `db:"reading" json:"reading"`
-	IsTarget bool      `db:"is_target" json:"is_target"`
-}
-
-func (s *Sentence) ToDomain() *domain.Sentence {
-	return &domain.Sentence{
-		ID:       s.ID,
-		CardID:   s.CardID,
-		Position: s.Position,
-		Text:     s.Text,
-		Reading:  s.Reading,
-		IsTarget: s.IsTarget,
 	}
 }
 
@@ -84,31 +58,17 @@ type cardPostgresAdapter struct {
 func (c *cardPostgresAdapter) GetCardByID(ctx context.Context, id uuid.UUID) (*domain.Card, error) {
 	query := `
 	SELECT
-		c.id,
-		c.deck_id,
-		c.vocab,
-		c.kana,
-		c.meaning,
-		c.english,
-		c.created_at,
-		c.updated_at,
-		COALESCE(
-			jsonb_agg(
-				jsonb_build_object(
-					'id', s.id,
-					'card_id', s.card_id,
-					'position', s.position,
-					'text', s.text,
-					'reading', s.reading,
-					'is_target', s.is_target
-				) ORDER BY s.position ASC
-			) FILTER (WHERE s.id IS NOT NULL), 
-			'[]'::jsonb
-		) as sentences
-	FROM cards AS c
-	LEFT JOIN sentences AS s ON s.card_id = c.id
-	WHERE c.id = $1
-	GROUP BY c.id
+		id,
+		deck_id,
+		vocab,
+		kana,
+		meaning,
+		english,
+		sentence,
+		created_at,
+		updated_at
+	FROM cards
+	WHERE id = $1
 	`
 
 	rows, err := c.db.Query(ctx, query, id)
@@ -132,14 +92,15 @@ func (c *cardPostgresAdapter) GetCardByID(ctx context.Context, id uuid.UUID) (*d
 func (c *cardPostgresAdapter) CreateCard(ctx context.Context, card *domain.Card) error {
 	m := NewCardModel(card)
 	query := `
-	INSERT INTO cards (id, deck_id, vocab, kana, meaning, english)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO cards (id, deck_id, vocab, kana, sentence, meaning, english)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := c.db.Exec(ctx, query,
 		m.ID,
 		m.DeckID,
 		m.Vocab,
 		m.Kana,
+		m.Sentence,
 		m.Meaning,
 		m.English,
 	)
@@ -166,32 +127,18 @@ func (c *cardPostgresAdapter) DeleteCard(ctx context.Context, cardID uuid.UUID) 
 func (c *cardPostgresAdapter) GetCardList(ctx context.Context, deckID uuid.UUID) ([]domain.Card, error) {
 	query := `
 	SELECT
-		c.id,
-		c.deck_id,
-		c.vocab,
-		c.kana,
-		c.meaning,
-		c.english,
-		c.created_at,
-		c.updated_at,
-		COALESCE(
-			jsonb_agg(
-				jsonb_build_object(
-					'id', s.id,
-					'card_id', s.card_id,
-					'position', s.position,
-					'text', s.text,
-					'reading', s.reading,
-					'is_target', s.is_target
-				) ORDER BY s.position ASC
-			) FILTER (WHERE s.id IS NOT NULL), 
-			'[]'::jsonb
-		) as sentences
-	FROM cards AS c
-	LEFT JOIN sentences AS s ON s.card_id = c.id
-	WHERE c.deck_id = $1
-	GROUP BY c.id
-	ORDER BY c.created_at;
+		id,
+		deck_id,
+		vocab,
+		kana,
+		meaning,
+		english,
+		sentence,
+		created_at,
+		updated_at
+	FROM cards
+	WHERE deck_id = $1
+	ORDER BY created_at
 	`
 
 	rows, err := c.db.Query(ctx, query, deckID)
@@ -219,10 +166,10 @@ func (c *cardPostgresAdapter) UpdateCard(ctx context.Context, card *domain.Card)
 	m := NewCardModel(card)
 	query := `
 	UPDATE cards
-	SET vocab = $1, kana = $2, meaning = $3, english = $4
-	WHERE id = $5
+	SET vocab = $1, kana = $2, meaning = $3, english = $4, sentence = $5
+	WHERE id = $6
 	`
-	commandTag, err := c.db.Exec(ctx, query, m.Vocab, m.Kana, m.Meaning, m.English, m.ID)
+	commandTag, err := c.db.Exec(ctx, query, m.Vocab, m.Kana, m.Meaning, m.English, m.Sentence, m.ID)
 	if err != nil {
 		return err
 	}

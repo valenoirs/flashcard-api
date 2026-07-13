@@ -14,7 +14,7 @@ type Card struct {
 	Kana      string
 	Meaning   string
 	English   string
-	Sentences  []*Sentence
+	Sentence  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
