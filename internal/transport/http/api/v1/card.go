@@ -209,7 +209,7 @@ func parseJapaneseMarkdown(parsedText string) string {
 
 	// 2. Handle Target/Bold Words: **一番** -> <strong class="target-word">一番</strong>
 	boldRegex := regexp.MustCompile(`\*\*([^*]+)\*\*`)
-	htmlResult = boldRegex.ReplaceAllString(htmlResult, `<strong class="target-word">$1</strong>`)
+	htmlResult = boldRegex.ReplaceAllString(htmlResult, `<strong>$1</strong>`)
 
 	return htmlResult
 }
