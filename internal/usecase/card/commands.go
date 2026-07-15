@@ -10,6 +10,7 @@ type CreateCardCommand struct {
 	Meaning  string
 	English  string
 	Sentence string
+	IsJukujikun bool
 }
 
 type UpdateCardCommand struct {
@@ -19,6 +20,7 @@ type UpdateCardCommand struct {
 	Meaning  string
 	English  string
 	Sentence string
+	IsJukujikun bool
 }
 
 type DeleteCardCommand struct {

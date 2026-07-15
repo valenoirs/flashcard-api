@@ -12,28 +12,30 @@ import (
 )
 
 type Card struct {
-	ID        uuid.UUID `db:"id"`
-	DeckID    uuid.UUID `db:"deck_id"`
-	Vocab     string    `db:"vocab"`
-	Kana      string    `db:"kana"`
-	Meaning   string    `db:"meaning"`
-	English   string    `db:"english"`
-	Sentence  string    `db:"sentence"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID          uuid.UUID `db:"id"`
+	DeckID      uuid.UUID `db:"deck_id"`
+	Vocab       string    `db:"vocab"`
+	Kana        string    `db:"kana"`
+	Meaning     string    `db:"meaning"`
+	English     string    `db:"english"`
+	Sentence    string    `db:"sentence"`
+	IsJukujikun bool      `db:"is_jukujikun"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
 }
 
 func (c *Card) ToDomain() *domain.Card {
 	return &domain.Card{
-		ID:        c.ID,
-		DeckID:    c.DeckID,
-		Vocab:     c.Vocab,
-		Kana:      c.Kana,
-		Meaning:   c.Meaning,
-		English:   c.English,
-		Sentence:  c.Sentence,
-		CreatedAt: c.CreatedAt,
-		UpdatedAt: c.UpdatedAt,
+		ID:          c.ID,
+		DeckID:      c.DeckID,
+		Vocab:       c.Vocab,
+		Kana:        c.Kana,
+		Meaning:     c.Meaning,
+		English:     c.English,
+		Sentence:    c.Sentence,
+		IsJukujikun: c.IsJukujikun,
+		CreatedAt:   c.CreatedAt,
+		UpdatedAt:   c.UpdatedAt,
 	}
 }
 
@@ -65,6 +67,7 @@ func (c *cardPostgresAdapter) GetCardByID(ctx context.Context, id uuid.UUID) (*d
 		meaning,
 		english,
 		sentence,
+	is_jukujikun,
 		created_at,
 		updated_at
 	FROM cards
@@ -92,7 +95,7 @@ func (c *cardPostgresAdapter) GetCardByID(ctx context.Context, id uuid.UUID) (*d
 func (c *cardPostgresAdapter) CreateCard(ctx context.Context, card *domain.Card) error {
 	m := NewCardModel(card)
 	query := `
-	INSERT INTO cards (id, deck_id, vocab, kana, sentence, meaning, english)
+	INSERT INTO cards (id, deck_id, vocab, kana, sentence, meaning, english, is_jukujikun)
 	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := c.db.Exec(ctx, query,
@@ -103,6 +106,7 @@ func (c *cardPostgresAdapter) CreateCard(ctx context.Context, card *domain.Card)
 		m.Sentence,
 		m.Meaning,
 		m.English,
+		m.IsJukujikun,
 	)
 
 	return err
@@ -134,6 +138,7 @@ func (c *cardPostgresAdapter) GetCardList(ctx context.Context, deckID uuid.UUID)
 		meaning,
 		english,
 		sentence,
+	is_jukujikun,
 		created_at,
 		updated_at
 	FROM cards
@@ -166,10 +171,10 @@ func (c *cardPostgresAdapter) UpdateCard(ctx context.Context, card *domain.Card)
 	m := NewCardModel(card)
 	query := `
 	UPDATE cards
-	SET vocab = $1, kana = $2, meaning = $3, english = $4, sentence = $5
-	WHERE id = $6
+	SET vocab = $2, kana = $3, meaning = $4, english = $5, sentence = $6, is_jukujikun = $7
+	WHERE id = $1
 	`
-	commandTag, err := c.db.Exec(ctx, query, m.Vocab, m.Kana, m.Meaning, m.English, m.Sentence, m.ID)
+	commandTag, err := c.db.Exec(ctx, query, m.ID, m.Vocab, m.Kana, m.Meaning, m.English, m.Sentence, m.IsJukujikun)
 	if err != nil {
 		return err
 	}

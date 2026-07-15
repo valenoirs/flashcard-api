@@ -195,8 +195,7 @@ func toCardResponse(c *domain.Card) dto.CardResponse {
 		Meaning:   c.Meaning,
 		English:   c.English,
 		Sentence:  parsedSentence,
-		CreatedAt: c.CreatedAt,
-		UpdatedAt: c.UpdatedAt,
+		IsJukujikun: c.IsJukujikun,
 	}
 }
 

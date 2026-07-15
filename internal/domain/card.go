@@ -8,15 +8,16 @@ import (
 )
 
 type Card struct {
-	ID        uuid.UUID
-	DeckID    uuid.UUID
-	Vocab     string
-	Kana      string
-	Meaning   string
-	English   string
-	Sentence  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          uuid.UUID
+	DeckID      uuid.UUID
+	Vocab       string
+	Kana        string
+	Meaning     string
+	English     string
+	Sentence    string
+	IsJukujikun bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type CardRepository interface {
