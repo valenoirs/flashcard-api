@@ -1,0 +1,2 @@
+ALTER TABLE decks
+DROP COLUMN IF EXISTS note;
