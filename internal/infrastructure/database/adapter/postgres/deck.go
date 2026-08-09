@@ -15,6 +15,7 @@ import (
 type Deck struct {
 	ID        uuid.UUID `db:"id"`
 	Name      string    `db:"name"`
+	Note      string    `db:"note"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
@@ -23,6 +24,7 @@ func (d *Deck) ToDomain() *domain.Deck {
 	return &domain.Deck{
 		ID:        d.ID,
 		Name:      d.Name,
+		Note:      d.Note,
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,
 	}
@@ -32,6 +34,7 @@ func NewDeckModel(d *domain.Deck) *Deck {
 	return &Deck{
 		ID:        d.ID,
 		Name:      d.Name,
+		Note:      d.Note,
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,
 	}
@@ -64,7 +67,7 @@ func (d *deckPostgresAdapter) DeleteDeck(ctx context.Context, deckID uuid.UUID) 
 // GetDeckList implements [domain.DeckRepository].
 func (d *deckPostgresAdapter) GetDeckList(ctx context.Context) ([]domain.Deck, error) {
 	query := `
-	SELECT id, name, created_at, updated_at
+	SELECT id, name, note, created_at, updated_at
 	FROM decks
 	ORDER BY created_at
 	`
@@ -79,7 +82,7 @@ func (d *deckPostgresAdapter) GetDeckList(ctx context.Context) ([]domain.Deck, e
 
 	for rows.Next() {
 		var m Deck
-		err := rows.Scan(&m.ID, &m.Name, &m.CreatedAt, &m.UpdatedAt)
+		err := rows.Scan(&m.ID, &m.Name, &m.Note, &m.CreatedAt, &m.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

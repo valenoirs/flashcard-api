@@ -87,6 +87,7 @@ func toDeckResponse(d *domain.Deck) dto.DeckResponse {
 	return dto.DeckResponse{
 		ID:        d.ID,
 		Name:      d.Name,
+		Note:      d.Note,
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,
 	}

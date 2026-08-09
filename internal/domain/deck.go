@@ -10,6 +10,7 @@ import (
 type Deck struct {
 	ID        uuid.UUID
 	Name      string
+	Note      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
